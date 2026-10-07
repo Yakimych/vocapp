@@ -9,9 +9,16 @@ type Props = {
   dispatch: Dispatch<WordFormAction>;
   canSaveWord: boolean;
   onSave: () => void;
+  error?: string;
 };
 
-export const WordForm = ({ state, dispatch, canSaveWord, onSave }: Props) => {
+export const WordForm = ({
+  state,
+  dispatch,
+  canSaveWord,
+  onSave,
+  error,
+}: Props) => {
   return (
     <div className="m-2">
       <div className="flex">
@@ -65,6 +72,7 @@ export const WordForm = ({ state, dispatch, canSaveWord, onSave }: Props) => {
       >
         Save 💾
       </button>
+      {error ? <div className="text-red-700">{error}</div> : null}
     </div>
   );
 };

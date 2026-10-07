@@ -24,44 +24,52 @@ export default function Words() {
     error: errorLoadingWords,
     isLoading: isLoadingWords,
   } = trpc.useQuery([queryName, { tenant }]);
-  const { mutate: performAddWordMutation, isLoading: isAddingWord } =
-    trpc.useMutation(["vocabulary.add"], {
-      onMutate: async (newWord) => {
-        await queryClient.cancelQueries(queryKey);
-        const previousWords = queryClient.getQueryData<VocValue[]>(queryKey);
-
-        const tempId = Math.random().toString();
-        queryClient.setQueryData<VocValue[]>(queryKey, (oldWords) => [
-          ...(oldWords ?? []),
-          { ...newWord, id: tempId, dateAdded: new Date(), dateUpdated: null },
-        ]);
-
-        return { id: tempId, previousWords };
-      },
-      onError: (_err, _newWord, context) => {
-        if (context?.previousWords) {
-          queryClient.setQueryData<VocValue[]>(queryKey, context.previousWords);
-        }
-      },
-      onSettled: (data, error, _, context) => {
-        if (error) {
-          console.log("Error adding word", error.message);
-          queryClient.invalidateQueries(queryKey);
-        }
-
-        if (context?.id === undefined || data?.id === undefined) return;
-
-        queryClient.setQueryData<VocValue[]>(
-          queryKey,
-          (oldWords) =>
-            oldWords?.map((oldWord) =>
-              oldWord.id === context.id ? { ...oldWord, id: data.id } : oldWord
-            ) ?? []
-        );
-      },
-    });
-
   const [wordState, dispatch] = useWordForm();
+
+  const {
+    mutate: performAddWordMutation,
+    isLoading: isAddingWord,
+    error: errorAddingWord,
+  } = trpc.useMutation(["vocabulary.add"], {
+    onMutate: async (newWord) => {
+      await queryClient.cancelQueries(queryKey);
+      const previousWords = queryClient.getQueryData<VocValue[]>(queryKey);
+
+      const tempId = Math.random().toString();
+      queryClient.setQueryData<VocValue[]>(queryKey, (oldWords) => [
+        ...(oldWords ?? []),
+        { ...newWord, id: tempId, dateAdded: new Date(), dateUpdated: null },
+      ]);
+
+      return { id: tempId, previousWords };
+    },
+    onSuccess: () => {
+      dispatch({ type: "ClearForm" });
+    },
+    onError: (_err, _newWord, context) => {
+      if (context?.previousWords) {
+        queryClient.setQueryData<VocValue[]>(queryKey, context.previousWords);
+      }
+    },
+    onSettled: (data, error, _, context) => {
+      if (error) {
+        console.log("Error adding word", error.message);
+        queryClient.invalidateQueries(queryKey);
+      }
+
+      if (context?.id === undefined || data?.id === undefined) return;
+
+      queryClient.setQueryData<VocValue[]>(
+        queryKey,
+        (oldWords) =>
+          oldWords?.map((oldWord) =>
+            oldWord.id === context.id
+              ? { ...oldWord, id: data.id, imageUrl: data.imageUrl }
+              : oldWord
+          ) ?? []
+      );
+    },
+  });
 
   const canAddWord =
     !(isLoadingWords || isAddingWord) && wordState.word.length > 0;
@@ -77,8 +85,6 @@ export default function Words() {
         explanations: mapLanguageValues(wordState.explanations),
         usages: mapLanguageValues(wordState.usages),
       });
-
-      dispatch({ type: "ClearForm" });
     }
   };
 
@@ -115,6 +121,7 @@ export default function Words() {
           state={wordState}
           canSaveWord={canAddWord}
           onSave={addWord}
+          error={errorAddingWord?.message}
         />
         {isAddingWord ? <div>Spinner</div> : null}
         {words ? (
