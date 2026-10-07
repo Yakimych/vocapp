@@ -1,6 +1,7 @@
 import { TRPCError } from "@trpc/server";
 import { v2 as cloudinary } from "cloudinary";
 
+// Both upload paths (copy from URL and direct file upload) must use the same options
 export const IMAGE_FOLDER = "vocapp";
 export const IMAGE_TRANSFORMATION = "c_limit,w_1200,h_1200";
 
@@ -69,4 +70,36 @@ export const storeImage = async (sourceUrl: string): Promise<string> => {
       )}`,
     });
   }
+};
+
+export type ImageUploadSignature = {
+  cloudName: string;
+  apiKey: string;
+  timestamp: number;
+  folder: string;
+  transformation: string;
+  signature: string;
+};
+
+export const createUploadSignature = (): ImageUploadSignature => {
+  const { cloud_name, api_key, api_secret } = cloudinary.config();
+  if (!cloud_name || !api_key || !api_secret) {
+    throw new TRPCError({
+      code: "INTERNAL_SERVER_ERROR",
+      message: "Image storage is not configured",
+    });
+  }
+
+  const paramsToSign = {
+    timestamp: Math.round(Date.now() / 1000),
+    folder: IMAGE_FOLDER,
+    transformation: IMAGE_TRANSFORMATION,
+  };
+
+  return {
+    ...paramsToSign,
+    cloudName: cloud_name,
+    apiKey: api_key,
+    signature: cloudinary.utils.api_sign_request(paramsToSign, api_secret),
+  };
 };

@@ -2,6 +2,7 @@ import { beforeEach, describe, expect, test, vi } from "vitest";
 import { TRPCError } from "@trpc/server";
 import { UploadApiResponse, v2 as cloudinary } from "cloudinary";
 import {
+  createUploadSignature,
   IMAGE_FOLDER,
   IMAGE_TRANSFORMATION,
   isStoredImageUrl,
@@ -16,6 +17,7 @@ vi.mock("cloudinary", () => ({
       api_secret: "test-secret",
     })),
     uploader: { upload: vi.fn() },
+    utils: { api_sign_request: vi.fn(() => "test-signature") },
   },
 }));
 
@@ -114,5 +116,28 @@ describe("storeImage", () => {
     expect(error).toBeInstanceOf(TRPCError);
     expect(error.code).toBe("BAD_REQUEST");
     expect(error.message).toContain("Resource not found");
+  });
+});
+
+describe("createUploadSignature", () => {
+  test("signs exactly the params the browser sends to Cloudinary", () => {
+    const result = createUploadSignature();
+
+    expect(cloudinary.utils.api_sign_request).toHaveBeenCalledWith(
+      {
+        timestamp: result.timestamp,
+        folder: IMAGE_FOLDER,
+        transformation: IMAGE_TRANSFORMATION,
+      },
+      "test-secret"
+    );
+    expect(result).toEqual({
+      cloudName: "test-cloud",
+      apiKey: "test-key",
+      timestamp: expect.any(Number),
+      folder: IMAGE_FOLDER,
+      transformation: IMAGE_TRANSFORMATION,
+      signature: "test-signature",
+    });
   });
 });

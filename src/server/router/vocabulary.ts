@@ -9,7 +9,7 @@ import {
 } from "../../srsLogic/srsAlgorithm";
 import addMinutes from "date-fns/addMinutes";
 import { getLateness, minutesFromDays } from "../../srsLogic/dateLogic";
-import { storeImage } from "../imageStorage";
+import { createUploadSignature, storeImage } from "../imageStorage";
 
 export type FlashCardWithValue = Pick<
   FlashCard,
@@ -21,6 +21,9 @@ export type FlashCardWithValue = Pick<
 const imageUrlSchema = z.string().trim();
 
 export const vocRouter = createRouter()
+  .mutation("signImageUpload", {
+    resolve: () => createUploadSignature(),
+  })
   .mutation("add", {
     input: z.object({
       tenant: z.string(),
