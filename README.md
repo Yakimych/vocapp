@@ -48,6 +48,8 @@ Treat the API secret like a password. It never reaches the browser, because file
 
 `yarn migrate:images` copies the images of existing words to Cloudinary. It takes `DATABASE_URL` and `CLOUDINARY_URL` from the environment and from `.env*` files, using the same file precedence as `next build`.
 
+The production database has already been migrated. [docs/image-migration.md](docs/image-migration.md) has the results and lists the words still left to fix.
+
 - Words whose original image can no longer be fetched are left unchanged and listed at the end, so you can fix them on the Edit page.
 - Re-running the script is safe, because images already on Cloudinary are skipped.
 - Each migrated word is logged as `old -> new`. Save the output if you want to be able to restore the original URLs.
