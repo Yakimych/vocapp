@@ -8,6 +8,7 @@ import { z } from "zod";
 export const serverSchema = z.object({
   // DATABASE_URL: z.string().url().nullable(),
   NODE_ENV: z.enum(["development", "test", "production"]),
+  CLOUDINARY_URL: z.string().startsWith("cloudinary://"),
 });
 
 /**

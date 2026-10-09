@@ -47,3 +47,6 @@ override.tf
 # artifacts
 packaged
 packaged.zip
+
+# image migration output
+migrate-images.log

@@ -9,6 +9,7 @@ import {
 } from "../../srsLogic/srsAlgorithm";
 import addMinutes from "date-fns/addMinutes";
 import { getLateness, minutesFromDays } from "../../srsLogic/dateLogic";
+import { createUploadSignature, storeImage } from "../imageStorage";
 
 export type FlashCardWithValue = Pick<
   FlashCard,
@@ -17,12 +18,17 @@ export type FlashCardWithValue = Pick<
   vocValue: VocValue;
 };
 
+const imageUrlSchema = z.string().trim();
+
 export const vocRouter = createRouter()
+  .mutation("signImageUpload", {
+    resolve: () => createUploadSignature(),
+  })
   .mutation("add", {
     input: z.object({
       tenant: z.string(),
       value: z.string(),
-      imageUrl: z.string(),
+      imageUrl: imageUrlSchema,
       translations: z.array(
         z.object({ value: z.string(), language: z.string() })
       ),
@@ -44,10 +50,11 @@ export const vocRouter = createRouter()
       },
       ctx,
     }) => {
+      const storedImageUrl = await storeImage(imageUrl);
       const result: VocValue = await ctx.prisma.vocValue.create({
         data: {
           value,
-          imageUrl,
+          imageUrl: storedImageUrl,
           tenant,
           language,
           translations,
@@ -56,14 +63,14 @@ export const vocRouter = createRouter()
           dateAdded: new Date(),
         },
       });
-      return { id: result.id };
+      return { id: result.id, imageUrl: storedImageUrl };
     },
   })
   .mutation("edit", {
     input: z.object({
       id: z.string(),
       value: z.string(),
-      imageUrl: z.string(),
+      imageUrl: imageUrlSchema,
       translations: z.array(
         z.object({ value: z.string(), language: z.string() })
       ),
@@ -85,10 +92,11 @@ export const vocRouter = createRouter()
       },
       ctx,
     }) => {
+      const storedImageUrl = await storeImage(imageUrl);
       const result = await ctx.prisma.vocValue.update({
         data: {
           value,
-          imageUrl,
+          imageUrl: storedImageUrl,
           language,
           translations,
           explanations,
@@ -97,7 +105,7 @@ export const vocRouter = createRouter()
         },
         where: { id },
       });
-      return { id: result.id };
+      return { id: result.id, imageUrl: storedImageUrl };
     },
   })
   .query("getForTenant", {

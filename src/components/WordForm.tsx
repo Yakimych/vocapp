@@ -1,4 +1,5 @@
-import { Dispatch } from "react";
+import { Dispatch, useState } from "react";
+import { ImageInput } from "./ImageInput";
 import { LanguageInputList } from "./LanguageInputList";
 import { LanguageSelector } from "./LanguageSelector";
 import { TextField } from "./TextField";
@@ -9,9 +10,19 @@ type Props = {
   dispatch: Dispatch<WordFormAction>;
   canSaveWord: boolean;
   onSave: () => void;
+  error?: string;
 };
 
-export const WordForm = ({ state, dispatch, canSaveWord, onSave }: Props) => {
+export const WordForm = ({
+  state,
+  dispatch,
+  canSaveWord,
+  onSave,
+  error,
+}: Props) => {
+  const [isUploadingImage, setIsUploadingImage] = useState(false);
+  const canSave = canSaveWord && !isUploadingImage;
+
   return (
     <div className="m-2">
       <div className="flex">
@@ -22,13 +33,13 @@ export const WordForm = ({ state, dispatch, canSaveWord, onSave }: Props) => {
           value={state.word}
           onTextChange={(word) => dispatch({ type: "SetWord", word })}
         />
-        <TextField
+        <ImageInput
           tabIndex={1}
-          placeholder="Image URL (optional)"
-          value={state.imageUrl ?? ""}
-          onTextChange={(imageUrl) =>
+          imageUrl={state.imageUrl}
+          onImageUrlChange={(imageUrl) =>
             dispatch({ type: "SetImageUrl", imageUrl })
           }
+          onUploadingChange={setIsUploadingImage}
         />
         <LanguageSelector
           language={state.language}
@@ -58,13 +69,14 @@ export const WordForm = ({ state, dispatch, canSaveWord, onSave }: Props) => {
 
       <button
         className={`${
-          !canSaveWord ? "bg-gray-300" : "bg-violet-500 hover:bg-violet-700"
+          !canSave ? "bg-gray-300" : "bg-violet-500 hover:bg-violet-700"
         } text-white font-bold py-2 px-4 rounded focus:outline-none focus:shadow-outline`}
-        disabled={!canSaveWord}
+        disabled={!canSave}
         onClick={onSave}
       >
         Save 💾
       </button>
+      {error ? <div className="text-red-700">{error}</div> : null}
     </div>
   );
 };

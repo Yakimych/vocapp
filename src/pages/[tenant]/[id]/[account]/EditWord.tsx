@@ -15,14 +15,17 @@ export default function EditWord() {
     isLoading: isLoadingWord,
   } = trpc.useQuery(["vocabulary.getById", { id }]);
 
-  const { mutate: performEditWordMutation, isLoading: isSavingWord } =
-    trpc.useMutation(["vocabulary.edit"], {
-      onSuccess: () => {
-        if (typeof window !== "undefined" && word) {
-          router.push(`/${word.tenant}/words/${account}`);
-        }
-      },
-    });
+  const {
+    mutate: performEditWordMutation,
+    isLoading: isSavingWord,
+    error: errorSavingWord,
+  } = trpc.useMutation(["vocabulary.edit"], {
+    onSuccess: () => {
+      if (typeof window !== "undefined" && word) {
+        router.push(`/${word.tenant}/words/${account}`);
+      }
+    },
+  });
 
   const [wordState, dispatch] = useWordForm(word);
 
@@ -52,6 +55,7 @@ export default function EditWord() {
       dispatch={dispatch}
       onSave={saveWord}
       canSaveWord={canSave}
+      error={errorSavingWord?.message}
     />
   );
 }
